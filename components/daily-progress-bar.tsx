@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { todayBRT } from "@/lib/date";
 
 type Props = {
   catId: string;
@@ -22,7 +23,7 @@ export function DailyProgressBar({
 
   useEffect(() => {
     const supabase = createClient();
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayBRT();
 
     const channel = supabase
       .channel(`daily_progress:${catId}`)
