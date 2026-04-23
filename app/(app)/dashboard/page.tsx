@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { todayBRT, formatBRT } from "@/lib/date";
 import { logout } from "./actions";
 
 const ALERT_HOURS = 6;
@@ -30,8 +31,7 @@ function formatAge(birthdate: string | null): string | null {
 }
 
 function formatToday(): string {
-  const d = new Date();
-  return d.toLocaleDateString("pt-BR", { day: "numeric", month: "long" });
+  return formatBRT(new Date(), { day: "numeric", month: "long" });
 }
 
 function initial(name: string | null | undefined): string {
@@ -61,7 +61,7 @@ export default async function DashboardPage() {
   const receivesAlerts = isTutor || isVet;
 
   const catIds = (cats ?? []).map((c) => c.id);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayBRT();
   let progressByCat = new Map<string, Progress>();
   if (catIds.length > 0) {
     const { data: progress } = await supabase
