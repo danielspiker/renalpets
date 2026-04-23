@@ -161,14 +161,15 @@ export default async function DashboardPage() {
                 const eaten = p ? Number(p.eaten_grams) : 0;
                 const goal = p ? Number(p.goal_grams) : 0;
                 const pct =
-                  goal > 0
-                    ? Math.min(100, Math.round((eaten / goal) * 100))
-                    : 0;
+                  goal > 0 ? Math.round((eaten / goal) * 100) : 0;
+                const over = pct > 100;
                 const completed = p?.completed ?? false;
                 const age = formatAge(cat.birthdate);
                 const weight = cat.weight_kg ? `${cat.weight_kg} kg` : null;
                 const meta = [age, weight].filter(Boolean).join(" · ");
-                const pctColor = completed
+                const pctColor = over
+                  ? "text-blue-500"
+                  : completed
                   ? "text-success"
                   : pct >= 80
                   ? "text-primary"
@@ -297,8 +298,9 @@ export default async function DashboardPage() {
             const p = progressByCat.get(cat.id);
             const eaten = p ? Number(p.eaten_grams) : 0;
             const goal = p ? Number(p.goal_grams) : 0;
-            const pct =
-              goal > 0 ? Math.min(100, Math.round((eaten / goal) * 100)) : 0;
+            const pct = goal > 0 ? Math.round((eaten / goal) * 100) : 0;
+            const over = pct > 100;
+            const barWidth = Math.min(100, pct);
             const completed = p?.completed ?? false;
             const age = formatAge(cat.birthdate);
             const weight = cat.weight_kg ? `${cat.weight_kg} kg` : null;
@@ -334,18 +336,26 @@ export default async function DashboardPage() {
                         </span>
                         <span
                           className={`text-sm font-bold ${
-                            completed ? "text-success" : "text-primary"
+                            over
+                              ? "text-blue-500"
+                              : completed
+                              ? "text-success"
+                              : "text-primary"
                           }`}
                         >
-                          {pct}%{completed && " ✓"}
+                          {pct}%{completed && !over && " ✓"}
                         </span>
                       </div>
                       <div className="h-2 bg-muted rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all ${
-                            completed ? "bg-success" : "bg-primary"
+                            over
+                              ? "bg-blue-500"
+                              : completed
+                              ? "bg-success"
+                              : "bg-primary"
                           }`}
-                          style={{ width: `${pct}%` }}
+                          style={{ width: `${barWidth}%` }}
                         />
                       </div>
                     </>

@@ -55,8 +55,9 @@ export function DailyProgressBar({
     };
   }, [catId]);
 
-  const pct =
-    goal > 0 ? Math.min(100, Math.round((eaten / goal) * 100)) : 0;
+  const pct = goal > 0 ? Math.round((eaten / goal) * 100) : 0;
+  const over = pct > 100;
+  const barWidth = Math.min(100, pct);
 
   if (goal === 0) {
     return (
@@ -66,15 +67,23 @@ export function DailyProgressBar({
     );
   }
 
-  const barColor = completed ? "bg-success" : "bg-primary";
-  const pctColor = completed ? "text-success" : "text-primary";
+  const barColor = over
+    ? "bg-blue-500"
+    : completed
+    ? "bg-success"
+    : "bg-primary";
+  const pctColor = over
+    ? "text-blue-500"
+    : completed
+    ? "text-success"
+    : "text-primary";
 
   return (
     <div>
       <div className="flex items-end justify-between mb-2">
         <div className="flex items-baseline gap-1">
           <span className={`text-4xl font-bold ${pctColor}`}>{pct}%</span>
-          {completed && (
+          {completed && !over && (
             <span className="text-success text-lg font-bold">✓</span>
           )}
         </div>
@@ -88,11 +97,13 @@ export function DailyProgressBar({
       <div className="bg-muted h-2 rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-all ${barColor}`}
-          style={{ width: `${pct}%` }}
+          style={{ width: `${barWidth}%` }}
         />
       </div>
       <p className="text-xs text-muted-foreground mt-2">
-        {completed
+        {over
+          ? "Passou da meta do dia"
+          : completed
           ? "Meta diária alcançada 🎉"
           : "Meta não atingida ainda — continue!"}
       </p>

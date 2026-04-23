@@ -39,6 +39,7 @@ export async function logMeal(
     logged_by: user.id,
     grams_served: gramsServed,
     grams_eaten: gramsEaten,
+    schedule_id: scheduleId,
   });
 
   if (error) {

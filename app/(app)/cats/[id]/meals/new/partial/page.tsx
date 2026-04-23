@@ -8,11 +8,16 @@ export default async function PartialMealPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ grams_served?: string; error?: string }>;
+  searchParams: Promise<{
+    grams_served?: string;
+    error?: string;
+    schedule?: string;
+  }>;
 }) {
   const { id } = await params;
   const sp = await searchParams;
   const gramsServed = Number(sp.grams_served ?? 0);
+  const scheduleId = sp.schedule ?? null;
 
   if (!gramsServed || gramsServed <= 0) {
     redirect(`/cats/${id}/meals/new`);
@@ -39,14 +44,18 @@ export default async function PartialMealPage({
     .single();
   if (profile?.role === "vet") redirect(`/cats/${id}`);
 
-  const action = logPartialMeal.bind(null, id);
+  const action = logPartialMeal.bind(null, id, scheduleId);
 
   return (
     <div className="flex flex-col">
       <nav className="flex items-center gap-2 h-14 px-4 bg-card border-b border-border">
         <Link
           href={`/cats/${id}/meals/new${
-            sp.grams_served ? `?grams_served=${sp.grams_served}` : ""
+            scheduleId
+              ? `?schedule=${scheduleId}`
+              : sp.grams_served
+              ? `?grams_served=${sp.grams_served}`
+              : ""
           }`}
           aria-label="Voltar"
           className="flex items-center gap-2 text-foreground"

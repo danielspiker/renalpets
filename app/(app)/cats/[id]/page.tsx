@@ -2,7 +2,23 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DailyProgressBar } from "@/components/daily-progress-bar";
-import { todayBRT } from "@/lib/date";
+import { todayBRT, brtDayBounds, formatBRT } from "@/lib/date";
+
+type DayItem =
+  | {
+      kind: "schedule";
+      id: string;
+      time: string;
+      grams: number;
+      done: boolean;
+    }
+  | {
+      kind: "adhoc";
+      id: string;
+      time: string;
+      gramsServed: number;
+      gramsEaten: number;
+    };
 
 function formatAge(birthdate: string | null): string | null {
   if (!birthdate) return null;
@@ -54,12 +70,50 @@ export default async function CatDetailsPage({
     .order("time_of_day");
 
   const today = todayBRT();
+  const { start: dayStart, end: dayEnd } = brtDayBounds(today);
   const { data: progress } = await supabase
     .from("daily_progress")
     .select("eaten_grams, goal_grams, completed")
     .eq("cat_id", id)
     .eq("day", today)
     .maybeSingle();
+
+  const { data: loggedToday } = await supabase
+    .from("meal_logs")
+    .select("id, schedule_id, served_at, grams_served, grams_eaten")
+    .eq("cat_id", id)
+    .gte("served_at", dayStart)
+    .lt("served_at", dayEnd)
+    .order("served_at");
+
+  const doneScheduleIds = new Set(
+    (loggedToday ?? [])
+      .filter((l) => l.schedule_id != null)
+      .map((l) => l.schedule_id as string)
+  );
+
+  const adHocLogs = (loggedToday ?? []).filter((l) => l.schedule_id == null);
+
+  const dayItems: DayItem[] = [
+    ...(schedules ?? []).map<DayItem>((s) => ({
+      kind: "schedule",
+      id: s.id,
+      time: s.time_of_day.slice(0, 5),
+      grams: Number(s.grams),
+      done: doneScheduleIds.has(s.id),
+    })),
+    ...adHocLogs.map<DayItem>((l) => ({
+      kind: "adhoc",
+      id: l.id,
+      time: formatBRT(l.served_at, {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }),
+      gramsServed: Number(l.grams_served),
+      gramsEaten: Number(l.grams_eaten),
+    })),
+  ].sort((a, b) => a.time.localeCompare(b.time));
 
   const isTutor = cat.tutor_id === user.id;
   const scheduledTotal =
@@ -163,7 +217,7 @@ export default async function CatDetailsPage({
             )}
           </div>
 
-          {!schedules || schedules.length === 0 ? (
+          {dayItems.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               {isTutor
                 ? "Nenhum horário cadastrado. Adicione para definir a meta diária."
@@ -171,55 +225,138 @@ export default async function CatDetailsPage({
             </p>
           ) : (
             <ul className="divide-y divide-border -mx-1">
-              {schedules.map((s) => (
-                <li
-                  key={s.id}
-                  className="flex items-center gap-3 py-3 px-1"
-                >
-                  <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center shrink-0">
-                    <svg
-                      className="h-4 w-4 text-muted-foreground"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
+              {dayItems.map((item) => {
+                if (item.kind === "schedule") {
+                  const done = item.done;
+                  return (
+                    <li
+                      key={`s-${item.id}`}
+                      className="flex items-center gap-3 py-3 px-1"
                     >
-                      <circle cx="12" cy="12" r="9" />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 7v5l3 2"
-                      />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground">
-                      {s.time_of_day.slice(0, 5)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {s.grams} g planejado
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    {canLogMeals && (
-                      <Link
-                        href={`/cats/${id}/meals/new?schedule=${s.id}`}
-                        className="bg-primary text-primary-foreground px-3 py-1.5 rounded-full font-medium hover:bg-primary/90"
+                      <div
+                        className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${
+                          done ? "bg-success/15" : "bg-muted"
+                        }`}
                       >
-                        Registrar
-                      </Link>
-                    )}
-                    {isTutor && (
-                      <Link
-                        href={`/cats/${id}/schedule/${s.id}/edit`}
-                        className="text-primary"
+                        {done ? (
+                          <svg
+                            className="h-5 w-5 text-success"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={3}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        ) : (
+                          <svg
+                            className="h-4 w-4 text-muted-foreground"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <circle cx="12" cy="12" r="9" />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M12 7v5l3 2"
+                            />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className={`font-medium ${
+                            done
+                              ? "text-muted-foreground line-through"
+                              : "text-foreground"
+                          }`}
+                        >
+                          {item.time}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.grams} g planejado
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        {canLogMeals &&
+                          (done ? (
+                            <span className="flex items-center gap-1 text-success font-medium px-3 py-1.5">
+                              <svg
+                                className="h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={3}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                              Registrado
+                            </span>
+                          ) : (
+                            <Link
+                              href={`/cats/${id}/meals/new?schedule=${item.id}`}
+                              className="bg-primary text-primary-foreground px-3 py-1.5 rounded-full font-medium hover:bg-primary/90"
+                            >
+                              Registrar
+                            </Link>
+                          ))}
+                        {isTutor && (
+                          <Link
+                            href={`/cats/${id}/schedule/${item.id}/edit`}
+                            className="text-primary"
+                          >
+                            Editar
+                          </Link>
+                        )}
+                      </div>
+                    </li>
+                  );
+                }
+                // adhoc
+                return (
+                  <li
+                    key={`a-${item.id}`}
+                    className="flex items-center gap-3 py-3 px-1"
+                  >
+                    <div className="h-10 w-10 rounded-full bg-success/15 flex items-center justify-center shrink-0">
+                      <svg
+                        className="h-5 w-5 text-success"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={3}
                       >
-                        Editar
-                      </Link>
-                    )}
-                  </div>
-                </li>
-              ))}
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground">
+                        {item.time}{" "}
+                        <span className="text-xs font-normal text-muted-foreground">
+                          · avulsa
+                        </span>
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.gramsEaten} g de {item.gramsServed} g servidas
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
 
