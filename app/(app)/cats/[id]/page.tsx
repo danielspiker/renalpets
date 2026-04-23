@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DailyProgressBar } from "@/components/daily-progress-bar";
+import { todayBRT } from "@/lib/date";
 
 function formatAge(birthdate: string | null): string | null {
   if (!birthdate) return null;
@@ -52,7 +53,7 @@ export default async function CatDetailsPage({
     .eq("cat_id", id)
     .order("time_of_day");
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayBRT();
   const { data: progress } = await supabase
     .from("daily_progress")
     .select("eaten_grams, goal_grams, completed")
