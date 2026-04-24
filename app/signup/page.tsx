@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { signup } from "./actions";
 
@@ -11,10 +12,15 @@ export default async function SignupPage({
   return (
     <div className="min-h-screen bg-background flex justify-center">
       <div className="w-full max-w-[430px] flex flex-col items-center px-6 pt-12 pb-8">
-        <div className="h-16 w-16 rounded-full bg-primary flex items-center justify-center shadow-sm">
-          <span className="text-white text-xl font-bold tracking-tight">
-            RP
-          </span>
+        <div className="h-16 w-16 rounded-2xl overflow-hidden shadow-sm">
+          <Image
+            src="/logo-renalpets.jpeg"
+            alt="RenalPets"
+            width={64}
+            height={64}
+            priority
+            className="h-full w-full object-cover"
+          />
         </div>
         <h1 className="mt-4 text-2xl font-bold text-foreground">Criar conta</h1>
         <p className="mt-1 text-sm text-muted-foreground">

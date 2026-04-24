@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { login } from "./actions";
 
@@ -11,10 +12,15 @@ export default async function LoginPage({
   return (
     <div className="min-h-screen bg-background flex justify-center">
       <div className="w-full max-w-[430px] flex flex-col items-center px-6 pt-16 pb-8">
-        <div className="h-20 w-20 rounded-full bg-primary flex items-center justify-center shadow-sm">
-          <span className="text-white text-2xl font-bold tracking-tight">
-            RP
-          </span>
+        <div className="h-20 w-20 rounded-2xl overflow-hidden shadow-sm">
+          <Image
+            src="/logo-renalpets.jpeg"
+            alt="RenalPets"
+            width={80}
+            height={80}
+            priority
+            className="h-full w-full object-cover"
+          />
         </div>
         <h1 className="mt-5 text-2xl font-bold text-foreground">RenalPets</h1>
         <p className="mt-1 text-sm text-muted-foreground">

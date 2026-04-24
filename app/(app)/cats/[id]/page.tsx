@@ -191,9 +191,17 @@ export default async function CatDetailsPage({
         )}
 
         <section className="bg-card border border-border rounded-2xl p-5">
-          <h2 className="text-sm font-semibold text-foreground mb-3">
-            Progresso de Hoje
-          </h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-foreground">
+              Progresso de Hoje
+            </h2>
+            <Link
+              href={`/cats/${id}/history`}
+              className="text-sm font-medium text-primary hover:underline"
+            >
+              Histórico
+            </Link>
+          </div>
           <DailyProgressBar
             catId={id}
             initialEatenGrams={eatenToday}
