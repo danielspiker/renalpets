@@ -1,36 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RenalPets
+
+Web app for tracking meals of cats with Chronic Kidney Disease (CKD).
+
+University project — UNIFACISA, ADS
+
+Dev: Daniel Marques do Nascimento
+
+## Roles
+
+- **Tutor** — cat owner; full control, grants access to others.
+- **Caregiver** — family member or pet sitter; per-cat access; cannot edit schedules.
+- **Veterinarian** — prescribes diet protocols, receives critical alerts.
+
+## Tech Stack
+
+- **Next.js 16** (App Router) + **TypeScript** + **React 19**
+- **Tailwind CSS 4**
+- **Supabase** — PostgreSQL, Auth, Realtime, Storage (RLS-secured)
+- **Vercel** — deploy
+
+> **Note:** Next.js 16 has breaking changes (e.g. `proxy.ts` replaces `middleware.ts`). Refer to `node_modules/next/dist/docs/` before changing infra-level files.
 
 ## Getting Started
 
-First, run the development server:
+Install deps and run dev server:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create `.env.local`:
 
-## Learn More
+```env
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+```
 
-To learn more about Next.js, take a look at the following resources:
+### Database
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Apply SQL migrations from `supabase/migrations/` in order, via Supabase Studio SQL Editor (or `supabase db push` if linked).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Scripts
 
-## Deploy on Vercel
+```bash
+npm run dev     # dev server
+npm run build   # production build
+npm run start   # serve production build
+npm run lint    # eslint
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Project Structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```text
+app/
+  (app)/              # authenticated route group
+    dashboard/        # tutor + vet dashboards
+    cats/[id]/        # cat detail, history, schedules, meal logs, access
+  login/  signup/  auth/
+  icon.jpeg           # favicon (Next 16 file convention)
+components/           # shared UI (DailyProgressBar, etc.)
+lib/
+  supabase/           # server + browser clients
+  date.ts             # BRT timezone helpers
+proxy.ts              # auth proxy (replaces middleware.ts)
+supabase/migrations/  # SQL schema + RLS + RPCs
+```
+
+## Key Business Rules
+
+- **Daily progress:** undereating is the failure mode — exceeding the goal is allowed (bar turns blue, no alert).
+- **Meal log ≤ 3 taps** (NRF03).
+- **Alerts** when a cat hasn't eaten for X hours go to tutor + vet, **not** caregiver.
+- **Caregiver access** is per-cat, granted by tutor.
+- **Vet account** is linked to a cat by the tutor (no self-service).
+- **Feeding tips** surface automatically when a meal is logged as not consumed.
+
+## Deploy
+
+Push to `main` → Vercel auto-builds. Configure `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in Vercel project env vars.
