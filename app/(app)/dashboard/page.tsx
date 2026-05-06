@@ -72,6 +72,34 @@ export default async function DashboardPage() {
     progressByCat = new Map(
       (progress ?? []).map((p) => [p.cat_id, p as Progress])
     );
+
+    // Fallback for cats with schedules but no daily_progress row yet
+    // (e.g. brand-new cat that hasn't logged any meal today).
+    const missing = catIds.filter((cid) => !progressByCat.has(cid));
+    if (missing.length > 0) {
+      const { data: schedules } = await supabase
+        .from("meal_schedules")
+        .select("cat_id, grams")
+        .in("cat_id", missing);
+      const scheduledByCat = new Map<string, number>();
+      for (const s of schedules ?? []) {
+        scheduledByCat.set(
+          s.cat_id,
+          (scheduledByCat.get(s.cat_id) ?? 0) + Number(s.grams)
+        );
+      }
+      for (const cid of missing) {
+        const goal = scheduledByCat.get(cid) ?? 0;
+        if (goal > 0) {
+          progressByCat.set(cid, {
+            cat_id: cid,
+            eaten_grams: 0,
+            goal_grams: goal,
+            completed: false,
+          });
+        }
+      }
+    }
   }
 
   let alerts: AlertRow[] = [];
