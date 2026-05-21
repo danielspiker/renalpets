@@ -48,94 +48,134 @@ export default async function CatAccessPage({
   const add = addAccess.bind(null, id);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-2xl mx-auto">
+    <div className="flex flex-col">
+      <nav className="flex items-center gap-2 h-14 px-4 bg-card border-b border-border">
         <Link
           href={`/cats/${id}`}
-          className="text-sm text-blue-600 hover:underline"
+          aria-label="Voltar"
+          className="flex items-center gap-2 text-foreground"
         >
-          ← Voltar
+          <svg
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+          <span className="font-semibold">Acesso — {cat.name}</span>
         </Link>
+      </nav>
 
-        <header className="bg-white rounded-lg shadow p-6 mt-4">
-          <h1 className="text-2xl font-bold text-gray-900">
-            Gerenciar acesso
-          </h1>
-          <p className="text-sm text-gray-600 mt-1">
-            Gato: {cat.name}. O acesso é concedido por gato, não globalmente.
+      <div className="bg-primary text-primary-foreground px-5 py-5 flex items-center gap-4">
+        <div className="h-14 w-14 rounded-full bg-white/40 ring-2 ring-white/20 flex items-center justify-center shrink-0">
+          <span className="text-white text-xl font-bold">
+            {cat.name?.[0]?.toUpperCase() ?? "?"}
+          </span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-base font-semibold">{cat.name}</p>
+          <p className="text-xs text-primary-foreground/80 mt-0.5">
+            Acesso concedido por gato, não globalmente
           </p>
-        </header>
+        </div>
+        <div className="text-right">
+          <p className="text-lg font-bold leading-none">
+            {caregivers.length + vets.length}
+          </p>
+          <p className="text-[10px] uppercase tracking-wide text-primary-foreground/80 mt-0.5">
+            vinculadas
+          </p>
+        </div>
+      </div>
 
-        <section className="bg-white rounded-lg shadow p-6 mt-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+      <div className="flex flex-col gap-4 px-5 py-5">
+
+        <form action={add} className="bg-card border border-border rounded-2xl p-5 flex flex-col gap-4">
+          <h2 className="text-sm font-semibold text-foreground">
             Adicionar pessoa
           </h2>
 
           {sp.error && (
-            <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-md p-3 mb-4">
+            <p className="text-sm text-destructive bg-red-50 border border-red-200 rounded-xl p-3">
               {sp.error}
             </p>
           )}
 
-          <form action={add} className="space-y-4">
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Email da pessoa <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                placeholder="email@exemplo.com"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                A pessoa precisa já ter uma conta cadastrada no RenalPets.
-              </p>
-            </div>
-
-            <fieldset>
-              <legend className="block text-sm font-medium text-gray-700 mb-1">
-                Tipo de acesso
-              </legend>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="radio"
-                    name="link_type"
-                    value="caregiver"
-                    defaultChecked
-                  />
-                  Cuidador
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="radio" name="link_type" value="vet" />
-                  Veterinário
-                </label>
-              </div>
-            </fieldset>
-
-            <button
-              type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded-md font-medium hover:bg-blue-700"
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-sm font-semibold text-foreground mb-2"
             >
-              Adicionar
-            </button>
-          </form>
-        </section>
+              E-mail <span className="text-destructive">*</span>
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              placeholder="email@exemplo.com"
+              className="w-full bg-background border border-input rounded-xl px-4 py-3 text-base focus:ring-2 focus:ring-ring focus:border-primary focus:outline-none"
+            />
+            <p className="text-xs text-muted-foreground mt-1.5">
+              A pessoa precisa já ter conta no RenalPets.
+            </p>
+          </div>
 
-        <section className="bg-white rounded-lg shadow p-6 mt-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          <fieldset>
+            <legend className="block text-sm font-semibold text-foreground mb-2">
+              Tipo de acesso <span className="text-destructive">*</span>
+            </legend>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="cursor-pointer">
+                <input
+                  type="radio"
+                  name="link_type"
+                  value="caregiver"
+                  defaultChecked
+                  className="peer sr-only"
+                />
+                <span className="block text-center px-4 py-3 rounded-xl border border-input bg-background text-sm font-medium text-foreground peer-checked:bg-primary peer-checked:text-primary-foreground peer-checked:border-primary transition-colors">
+                  Cuidador
+                </span>
+              </label>
+              <label className="cursor-pointer">
+                <input
+                  type="radio"
+                  name="link_type"
+                  value="vet"
+                  className="peer sr-only"
+                />
+                <span className="block text-center px-4 py-3 rounded-xl border border-input bg-background text-sm font-medium text-foreground peer-checked:bg-primary peer-checked:text-primary-foreground peer-checked:border-primary transition-colors">
+                  Veterinário
+                </span>
+              </label>
+            </div>
+          </fieldset>
+
+          <button
+            type="submit"
+            className="w-full bg-primary text-primary-foreground py-3.5 rounded-full font-semibold text-sm hover:bg-primary/90 transition-colors shadow-sm"
+          >
+            + Adicionar
+          </button>
+        </form>
+
+        <section className="bg-card border border-border rounded-2xl p-5">
+          <h2 className="text-sm font-semibold text-foreground mb-3">
             Cuidadores
           </h2>
           {caregivers.length === 0 ? (
-            <p className="text-sm text-gray-600">Nenhum cuidador vinculado.</p>
+            <p className="text-sm text-muted-foreground">
+              Nenhum cuidador vinculado.
+            </p>
           ) : (
-            <ul className="divide-y divide-gray-100">
+            <ul className="divide-y divide-border -mx-1">
               {caregivers.map((c) => (
                 <AccessRowItem key={c.user_id} row={c} catId={id} />
               ))}
@@ -143,16 +183,16 @@ export default async function CatAccessPage({
           )}
         </section>
 
-        <section className="bg-white rounded-lg shadow p-6 mt-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <section className="bg-card border border-border rounded-2xl p-5">
+          <h2 className="text-sm font-semibold text-foreground mb-3">
             Veterinários
           </h2>
           {vets.length === 0 ? (
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Nenhum veterinário vinculado.
             </p>
           ) : (
-            <ul className="divide-y divide-gray-100">
+            <ul className="divide-y divide-border -mx-1">
               {vets.map((v) => (
                 <AccessRowItem key={v.user_id} row={v} catId={id} />
               ))}
@@ -167,15 +207,24 @@ export default async function CatAccessPage({
 function AccessRowItem({ row, catId }: { row: AccessRow; catId: string }) {
   const action = removeAccess.bind(null, catId, row.user_id, row.link_type);
   return (
-    <li className="flex items-center justify-between py-3">
-      <div>
-        <p className="font-medium text-gray-900">{row.full_name}</p>
-        <p className="text-xs text-gray-500">{row.email}</p>
+    <li className="flex items-center justify-between py-3 px-1">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center shrink-0">
+          <span className="text-muted-foreground font-semibold">
+            {row.full_name?.[0]?.toUpperCase() ?? "?"}
+          </span>
+        </div>
+        <div className="min-w-0">
+          <p className="font-medium text-foreground truncate">
+            {row.full_name}
+          </p>
+          <p className="text-xs text-muted-foreground truncate">{row.email}</p>
+        </div>
       </div>
       <form action={action}>
         <ConfirmButton
           message={`Remover ${row.full_name}?`}
-          className="text-sm text-red-600 hover:underline"
+          className="text-sm font-medium text-destructive hover:underline"
         >
           Remover
         </ConfirmButton>

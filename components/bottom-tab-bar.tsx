@@ -147,35 +147,33 @@ const tutorTabs: Tab[] = [
     label: "Início",
     href: "/dashboard",
     icon: icons.home,
-    match: (p) => p === "/dashboard",
-  },
-  {
-    key: "gatos",
-    label: "Gatos",
-    href: "/dashboard",
-    icon: icons.cat,
-    match: (p) => p.startsWith("/cats"),
+    match: (p) => p === "/dashboard" || p.startsWith("/cats"),
   },
   {
     key: "registrar",
     label: "Registrar",
-    href: null,
+    href: "/register",
     icon: icons.plus,
-    match: (p) => p.includes("/meals/new"),
+    match: (p) =>
+      p.startsWith("/register") ||
+      p.includes("/meals/new") ||
+      p.includes("/incidents/new") ||
+      p === "/cats/new" ||
+      p.endsWith("/access"),
   },
   {
     key: "historico",
     label: "Histórico",
-    href: null,
+    href: "/history",
     icon: icons.clock,
-    match: () => false,
+    match: (p) => p === "/history" || p.includes("/history"),
   },
   {
     key: "perfil",
     label: "Perfil",
-    href: null,
+    href: "/profile",
     icon: icons.user,
-    match: () => false,
+    match: (p) => p === "/profile",
   },
 ];
 
@@ -204,9 +202,9 @@ const vetTabs: Tab[] = [
   {
     key: "perfil",
     label: "Perfil",
-    href: null,
+    href: "/profile",
     icon: icons.user,
-    match: () => false,
+    match: (p) => p === "/profile",
   },
 ];
 

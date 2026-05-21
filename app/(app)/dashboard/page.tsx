@@ -239,38 +239,40 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="flex flex-col px-5 pt-6 pb-6">
-      <header className="flex items-start justify-between mb-5">
+    <div className="flex flex-col">
+      <header className="bg-primary text-primary-foreground px-5 pt-6 pb-5 flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
+          <h1 className="text-2xl font-bold">
             Olá, {displayName} <span aria-hidden>👋</span>
           </h1>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="inline-flex items-center text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+          <div className="flex items-center gap-2 mt-1.5">
+            <span className="inline-flex items-center text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-white/20 text-primary-foreground">
               {isTutor ? "Tutor" : "Cuidador"}
             </span>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-primary-foreground/85">
               Hoje, {formatToday()}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <form action={logout}>
             <button
               type="submit"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground"
+              className="text-xs font-medium text-primary-foreground/80 hover:text-primary-foreground"
               title="Sair"
             >
               Sair
             </button>
           </form>
-          <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
+          <div className="h-10 w-10 rounded-full bg-white/30 ring-2 ring-white/20 flex items-center justify-center">
             <span className="text-white text-sm font-bold">
               {initial(profile?.full_name || user?.email)}
             </span>
           </div>
         </div>
       </header>
+
+      <div className="flex flex-col px-5 pt-5 pb-6">
 
       {alerts.length > 0 && (
         <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-5">
@@ -395,6 +397,7 @@ export default async function DashboardPage() {
           })}
         </ul>
       )}
+      </div>
     </div>
   );
 }

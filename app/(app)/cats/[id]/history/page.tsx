@@ -111,22 +111,39 @@ export default async function HistoryPage({
               });
 
               return (
-                <li
-                  key={r.day}
-                  className="flex items-center justify-between px-4 py-3"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-foreground capitalize">
-                      {dateLabel}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {eaten.toFixed(1)} g de {goal.toFixed(1)} g
-                    </p>
-                  </div>
-                  <span className={`text-sm font-bold ${pctColor}`}>
-                    {pct}%
-                    {completed && !over && " ✓"}
-                  </span>
+                <li key={r.day}>
+                  <Link
+                    href={`/cats/${id}/history/${r.day}`}
+                    className="flex items-center justify-between px-4 py-3 hover:bg-muted/40 transition-colors"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-foreground capitalize">
+                        {dateLabel}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {eaten.toFixed(1)} g de {goal.toFixed(1)} g
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-sm font-bold ${pctColor}`}>
+                        {pct}%
+                        {completed && !over && " ✓"}
+                      </span>
+                      <svg
+                        className="h-4 w-4 text-muted-foreground"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </div>
+                  </Link>
                 </li>
               );
             })}
