@@ -14,6 +14,8 @@ export async function updateSchedule(
   const time_of_day = (formData.get("time_of_day") as string)?.trim();
   const gramsRaw = (formData.get("grams") as string)?.trim();
   const grams = Number(gramsRaw);
+  const foodTypeRaw = formData.get("food_type") as string | null;
+  const food_type: "dry" | "wet" = foodTypeRaw === "wet" ? "wet" : "dry";
 
   if (!time_of_day) {
     redirect(
@@ -28,7 +30,7 @@ export async function updateSchedule(
 
   const { error } = await supabase
     .from("meal_schedules")
-    .update({ time_of_day, grams })
+    .update({ time_of_day, grams, food_type })
     .eq("id", scheduleId);
 
   if (error) {

@@ -11,6 +11,8 @@ export async function updateCat(id: string, formData: FormData) {
   const birthdate = (formData.get("birthdate") as string) || null;
   const weightRaw = (formData.get("weight_kg") as string) || "";
   const weight_kg = weightRaw === "" ? null : Number(weightRaw);
+  const goalRaw = (formData.get("daily_goal_grams") as string) || "";
+  const daily_goal_grams = goalRaw === "" ? null : Number(goalRaw);
 
   if (!name) {
     redirect(`/cats/${id}/edit?error=Nome%20é%20obrigatório`);
@@ -18,7 +20,7 @@ export async function updateCat(id: string, formData: FormData) {
 
   const { error } = await supabase
     .from("cats")
-    .update({ name, birthdate, weight_kg })
+    .update({ name, birthdate, weight_kg, daily_goal_grams })
     .eq("id", id);
 
   if (error) {

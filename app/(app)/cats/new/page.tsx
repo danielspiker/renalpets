@@ -96,6 +96,27 @@ export default async function NewCatPage({
             />
           </div>
 
+          <div>
+            <label
+              htmlFor="daily_goal_grams"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Meta diária (g de ração seca)
+            </label>
+            <input
+              id="daily_goal_grams"
+              name="daily_goal_grams"
+              type="number"
+              step="0.1"
+              min="0"
+              placeholder="Ex: 60"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Em gramas de ração seca. Úmida é convertida (1 g seca ≈ 3,7 g úmida).
+            </p>
+          </div>
+
           <div className="flex gap-3 pt-2">
             <button
               type="submit"

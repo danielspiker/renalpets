@@ -10,6 +10,8 @@ export async function createSchedule(catId: string, formData: FormData) {
   const time_of_day = (formData.get("time_of_day") as string)?.trim();
   const gramsRaw = (formData.get("grams") as string)?.trim();
   const grams = Number(gramsRaw);
+  const foodTypeRaw = formData.get("food_type") as string | null;
+  const food_type: "dry" | "wet" = foodTypeRaw === "wet" ? "wet" : "dry";
 
   if (!time_of_day) {
     redirect(`/cats/${catId}/schedule/new?error=Horário%20é%20obrigatório`);
@@ -24,6 +26,7 @@ export async function createSchedule(catId: string, formData: FormData) {
     cat_id: catId,
     time_of_day,
     grams,
+    food_type,
   });
 
   if (error) {

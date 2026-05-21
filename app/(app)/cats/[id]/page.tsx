@@ -3,6 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { DailyProgressBar } from "@/components/daily-progress-bar";
 import { todayBRT, brtDayBounds, formatBRT } from "@/lib/date";
+import { INCIDENT_LABELS, isManagement, type IncidentType } from "@/lib/incidents";
+import { toDryEquivalent, fromDryEquivalent, type FoodType } from "@/lib/food";
 
 type DayItem =
   | {
@@ -10,7 +12,13 @@ type DayItem =
       id: string;
       time: string;
       grams: number;
+      foodType: FoodType;
       done: boolean;
+      log: {
+        gramsServed: number;
+        gramsEaten: number;
+        foodType: FoodType;
+      } | null;
     }
   | {
       kind: "adhoc";
@@ -18,6 +26,13 @@ type DayItem =
       time: string;
       gramsServed: number;
       gramsEaten: number;
+    }
+  | {
+      kind: "incident";
+      id: string;
+      time: string;
+      type: IncidentType;
+      notes: string | null;
     };
 
 function formatAge(birthdate: string | null): string | null {
@@ -65,7 +80,7 @@ export default async function CatDetailsPage({
 
   const { data: schedules } = await supabase
     .from("meal_schedules")
-    .select("id, time_of_day, grams")
+    .select("id, time_of_day, grams, food_type")
     .eq("cat_id", id)
     .order("time_of_day");
 
@@ -80,17 +95,33 @@ export default async function CatDetailsPage({
 
   const { data: loggedToday } = await supabase
     .from("meal_logs")
-    .select("id, schedule_id, served_at, grams_served, grams_eaten")
+    .select("id, schedule_id, served_at, grams_served, grams_eaten, food_type")
     .eq("cat_id", id)
     .gte("served_at", dayStart)
     .lt("served_at", dayEnd)
     .order("served_at");
 
-  const doneScheduleIds = new Set(
-    (loggedToday ?? [])
-      .filter((l) => l.schedule_id != null)
-      .map((l) => l.schedule_id as string)
-  );
+  const { data: incidentsToday } = await supabase
+    .from("incidents")
+    .select("id, type, occurred_at, notes")
+    .eq("cat_id", id)
+    .gte("occurred_at", dayStart)
+    .lt("occurred_at", dayEnd)
+    .order("occurred_at");
+
+  const logBySchedule = new Map<
+    string,
+    { gramsServed: number; gramsEaten: number; foodType: FoodType }
+  >();
+  for (const l of loggedToday ?? []) {
+    if (l.schedule_id) {
+      logBySchedule.set(l.schedule_id, {
+        gramsServed: Number(l.grams_served),
+        gramsEaten: Number(l.grams_eaten),
+        foodType: (l.food_type === "wet" ? "wet" : "dry") as FoodType,
+      });
+    }
+  }
 
   const adHocLogs = (loggedToday ?? []).filter((l) => l.schedule_id == null);
 
@@ -100,7 +131,9 @@ export default async function CatDetailsPage({
       id: s.id,
       time: s.time_of_day.slice(0, 5),
       grams: Number(s.grams),
-      done: doneScheduleIds.has(s.id),
+      foodType: (s.food_type === "wet" ? "wet" : "dry") as FoodType,
+      done: logBySchedule.has(s.id),
+      log: logBySchedule.get(s.id) ?? null,
     })),
     ...adHocLogs.map<DayItem>((l) => ({
       kind: "adhoc",
@@ -113,12 +146,22 @@ export default async function CatDetailsPage({
       gramsServed: Number(l.grams_served),
       gramsEaten: Number(l.grams_eaten),
     })),
+    ...(incidentsToday ?? []).map<DayItem>((i) => ({
+      kind: "incident",
+      id: i.id,
+      time: formatBRT(i.occurred_at, {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }),
+      type: i.type as IncidentType,
+      notes: i.notes,
+    })),
   ].sort((a, b) => a.time.localeCompare(b.time));
 
   const isTutor = cat.tutor_id === user.id;
-  const scheduledTotal =
-    schedules?.reduce((sum, s) => sum + Number(s.grams), 0) ?? 0;
-  const goalToday = progress ? Number(progress.goal_grams) : scheduledTotal;
+  const catGoal = cat.daily_goal_grams ? Number(cat.daily_goal_grams) : 0;
+  const goalToday = progress ? Number(progress.goal_grams) : catGoal;
   const eatenToday = progress ? Number(progress.eaten_grams) : 0;
   const completed = progress?.completed ?? false;
 
@@ -288,7 +331,15 @@ export default async function CatDetailsPage({
                           {item.time}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {item.grams} g planejado
+                          {item.log
+                            ? item.log.foodType === "wet"
+                              ? `${item.log.gramsEaten} g seca · ${fromDryEquivalent(item.log.gramsServed)} g úmida servida`
+                              : item.log.gramsEaten === item.log.gramsServed
+                              ? `${item.log.gramsEaten} g seca`
+                              : `${item.log.gramsEaten} g de ${item.log.gramsServed} g seca`
+                            : item.foodType === "wet"
+                            ? `${item.grams} g úmida (≈ ${toDryEquivalent(item.grams, "wet")} g seca)`
+                            : `${item.grams} g planejado`}
                         </p>
                       </div>
                       <div className="flex items-center gap-3 text-sm">
@@ -330,37 +381,100 @@ export default async function CatDetailsPage({
                     </li>
                   );
                 }
-                // adhoc
+                if (item.kind === "adhoc") {
+                  return (
+                    <li
+                      key={`a-${item.id}`}
+                      className="flex items-center gap-3 py-3 px-1"
+                    >
+                      <div className="h-10 w-10 rounded-full bg-success/15 flex items-center justify-center shrink-0">
+                        <svg
+                          className="h-5 w-5 text-success"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={3}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground">
+                          {item.time}{" "}
+                          <span className="text-xs font-normal text-muted-foreground">
+                            · avulsa
+                          </span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.gramsEaten} g de {item.gramsServed} g servidas
+                        </p>
+                      </div>
+                    </li>
+                  );
+                }
+                // incident
+                const isMgmt = isManagement(item.type);
                 return (
                   <li
-                    key={`a-${item.id}`}
+                    key={`i-${item.id}`}
                     className="flex items-center gap-3 py-3 px-1"
                   >
-                    <div className="h-10 w-10 rounded-full bg-success/15 flex items-center justify-center shrink-0">
-                      <svg
-                        className="h-5 w-5 text-success"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={3}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
+                    <div
+                      className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 ${
+                        isMgmt ? "bg-sky-100" : "bg-amber-100"
+                      }`}
+                    >
+                      {isMgmt ? (
+                        // pill / medication icon
+                        <svg
+                          className="h-5 w-5 text-sky-700"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M10.5 20.5l10-10a4.95 4.95 0 10-7-7l-10 10a4.95 4.95 0 107 7zM8.5 8.5l7 7"
+                          />
+                        </svg>
+                      ) : (
+                        // warning triangle for clinical signs
+                        <svg
+                          className="h-5 w-5 text-amber-700"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+                          />
+                        </svg>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-foreground">
                         {item.time}{" "}
                         <span className="text-xs font-normal text-muted-foreground">
-                          · avulsa
+                          · {isMgmt ? "manejo" : "intercorrência"}
                         </span>
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {item.gramsEaten} g de {item.gramsServed} g servidas
+                        {INCIDENT_LABELS[item.type]}
                       </p>
+                      {item.notes && (
+                        <p className="text-xs text-muted-foreground italic mt-0.5 truncate">
+                          {item.notes}
+                        </p>
+                      )}
                     </div>
                   </li>
                 );
@@ -369,12 +483,18 @@ export default async function CatDetailsPage({
           )}
 
           {canLogMeals && (
-            <div className="mt-3 pt-3 border-t border-border">
+            <div className="mt-3 pt-3 border-t border-border flex flex-col gap-2">
               <Link
                 href={`/cats/${id}/meals/new`}
                 className="text-sm font-medium text-primary hover:underline"
               >
                 + Registrar refeição avulsa
+              </Link>
+              <Link
+                href={`/cats/${id}/incidents/new`}
+                className="text-sm font-medium text-primary hover:underline"
+              >
+                + Registrar intercorrência / medicação
               </Link>
             </div>
           )}

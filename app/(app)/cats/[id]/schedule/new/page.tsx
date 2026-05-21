@@ -94,26 +94,62 @@ export default async function NewSchedulePage({
           />
         </div>
 
-        <div className="bg-card border border-border rounded-2xl p-5">
-          <label
-            htmlFor="grams"
-            className="block text-sm font-semibold text-foreground mb-2"
-          >
-            Gramas por refeição <span className="text-destructive">*</span>
-          </label>
-          <div className="relative">
-            <input
-              id="grams"
-              name="grams"
-              type="number"
-              step="0.1"
-              min="0.1"
-              required
-              className="w-full bg-background border border-input rounded-xl px-4 py-3 pr-16 text-lg font-semibold focus:ring-2 focus:ring-ring focus:border-primary focus:outline-none"
-            />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">
-              gramas
+        <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+          <div>
+            <label
+              htmlFor="grams"
+              className="block text-sm font-semibold text-foreground mb-2"
+            >
+              Gramas por refeição <span className="text-destructive">*</span>
+            </label>
+            <div className="relative">
+              <input
+                id="grams"
+                name="grams"
+                type="number"
+                step="0.1"
+                min="0.1"
+                required
+                className="w-full bg-background border border-input rounded-xl px-4 py-3 pr-16 text-lg font-semibold focus:ring-2 focus:ring-ring focus:border-primary focus:outline-none"
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">
+                gramas
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <span className="block text-sm font-semibold text-foreground mb-2">
+              Tipo de ração <span className="text-destructive">*</span>
             </span>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="cursor-pointer">
+                <input
+                  type="radio"
+                  name="food_type"
+                  value="dry"
+                  defaultChecked
+                  className="peer sr-only"
+                />
+                <span className="block text-center px-4 py-3 rounded-xl border border-input bg-background text-sm font-medium text-foreground peer-checked:bg-primary peer-checked:text-primary-foreground peer-checked:border-primary transition-colors">
+                  Seca
+                </span>
+              </label>
+              <label className="cursor-pointer">
+                <input
+                  type="radio"
+                  name="food_type"
+                  value="wet"
+                  className="peer sr-only"
+                />
+                <span className="block text-center px-4 py-3 rounded-xl border border-input bg-background text-sm font-medium text-foreground peer-checked:bg-primary peer-checked:text-primary-foreground peer-checked:border-primary transition-colors">
+                  Úmida
+                </span>
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1.5">
+              Úmida é convertida para equivalente em seca ao registrar (1 g seca ≈ 3,7 g úmida).
+            </p>
           </div>
         </div>
 

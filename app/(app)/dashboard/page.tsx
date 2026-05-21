@@ -53,7 +53,7 @@ export default async function DashboardPage() {
 
   const { data: cats } = await supabase
     .from("cats")
-    .select("id, name, birthdate, weight_kg")
+    .select("id, name, birthdate, weight_kg, daily_goal_grams")
     .order("name");
 
   const isTutor = profile?.role === "tutor";
@@ -73,31 +73,18 @@ export default async function DashboardPage() {
       (progress ?? []).map((p) => [p.cat_id, p as Progress])
     );
 
-    // Fallback for cats with schedules but no daily_progress row yet
+    // Fallback for cats with goal set but no daily_progress row yet
     // (e.g. brand-new cat that hasn't logged any meal today).
-    const missing = catIds.filter((cid) => !progressByCat.has(cid));
-    if (missing.length > 0) {
-      const { data: schedules } = await supabase
-        .from("meal_schedules")
-        .select("cat_id, grams")
-        .in("cat_id", missing);
-      const scheduledByCat = new Map<string, number>();
-      for (const s of schedules ?? []) {
-        scheduledByCat.set(
-          s.cat_id,
-          (scheduledByCat.get(s.cat_id) ?? 0) + Number(s.grams)
-        );
-      }
-      for (const cid of missing) {
-        const goal = scheduledByCat.get(cid) ?? 0;
-        if (goal > 0) {
-          progressByCat.set(cid, {
-            cat_id: cid,
-            eaten_grams: 0,
-            goal_grams: goal,
-            completed: false,
-          });
-        }
+    for (const c of cats ?? []) {
+      if (progressByCat.has(c.id)) continue;
+      const goal = c.daily_goal_grams ? Number(c.daily_goal_grams) : 0;
+      if (goal > 0) {
+        progressByCat.set(c.id, {
+          cat_id: c.id,
+          eaten_grams: 0,
+          goal_grams: goal,
+          completed: false,
+        });
       }
     }
   }
@@ -119,7 +106,12 @@ export default async function DashboardPage() {
         <header className="bg-vet-surface text-vet-foreground px-5 pt-6 pb-4">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-lg font-bold">Painel Veterinário</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg font-bold">Painel Veterinário</h1>
+                <span className="inline-flex items-center text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-white/15 text-white">
+                  Vet
+                </span>
+              </div>
               <p className="text-sm text-white/70 mt-0.5">
                 Dra. {displayName}
               </p>
@@ -253,9 +245,14 @@ export default async function DashboardPage() {
           <h1 className="text-2xl font-bold text-foreground">
             Olá, {displayName} <span aria-hidden>👋</span>
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Hoje, {formatToday()}
-          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="inline-flex items-center text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+              {isTutor ? "Tutor" : "Cuidador"}
+            </span>
+            <p className="text-sm text-muted-foreground">
+              Hoje, {formatToday()}
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <form action={logout}>
